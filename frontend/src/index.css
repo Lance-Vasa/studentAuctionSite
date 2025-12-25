@@ -1,0 +1,12 @@
+@import "tailwindcss";
+
+@font-face {
+  font-family: 'Nebraska';
+  src: url('/fonts/Nebraska.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+}
+
+@theme {
+  --font-nebraska: 'Nebraska', sans-serif;
+}
