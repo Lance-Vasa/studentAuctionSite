@@ -2,7 +2,7 @@
 
 A specialized peer-to-peer marketplace web application optimized for University of Nebraska students. This project allows users to buy and sell "Husker Gear" and "Dorm Market" items via fixed-price listings or auctions.
 
-## 🚀 Features Implemented
+## Features Implemented
 
 ### Backend (NestJS)
 *   **Modular Architecture**: Organized into `Users`, `Auth`, `Listings`, `Bids`, and `Cart` modules.
