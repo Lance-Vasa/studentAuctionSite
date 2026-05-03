@@ -69,6 +69,34 @@ A specialized peer-to-peer marketplace web application optimized for University 
     ```
     *App runs on http://localhost:5173*
 
+### One-Command Startup (Root)
+
+If you want to start the full stack from one command:
+
+```bash
+npm run start:all
+```
+
+This command installs root + backend + frontend dependencies, starts Postgres, and then runs backend/frontend dev servers together.
+
+If dependencies are already installed, use the faster command:
+
+1.  **One-time setup**
+    ```bash
+    npm install
+    npm run install:all
+    ```
+
+2.  **Start everything**
+    ```bash
+    npm run dev
+    ```
+
+3.  **Stop database container when done**
+    ```bash
+    npm run stop
+    ```
+
 ## 📚 API Overview
 
 | Method | Endpoint | Description |

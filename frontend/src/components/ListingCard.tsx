@@ -14,18 +14,22 @@ export interface Listing {
 
 interface ListingCardProps {
   listing: Listing;
+  onClick?: (listingId: string) => void;
 }
 
-export default function ListingCard({ listing }: ListingCardProps) {
-  return (
-    <Link to={`/listings/${listing.id}`} className="block group relative aspect-square rounded-lg overflow-hidden bg-gray-200 shadow-md hover:shadow-xl transition-all duration-300">
+export default function ListingCard({ listing, onClick }: ListingCardProps) {
+  const sharedClassName =
+    'block group relative aspect-square rounded-lg overflow-hidden bg-gray-200 shadow-md hover:shadow-xl transition-all duration-300';
+
+  const cardContent = (
+    <>
       {listing.image_url ? (
-        <img 
-          src={`http://localhost:3000${listing.image_url}`} 
-          alt={listing.title} 
+        <img
+          src={`http://localhost:3000${listing.image_url}`}
+          alt={listing.title}
           className={clsx(
-            "w-full h-full object-cover transition-transform duration-500 group-hover:scale-110",
-            listing.is_sold && "opacity-50 grayscale"
+            'w-full h-full object-cover transition-transform duration-500 group-hover:scale-110',
+            listing.is_sold && 'opacity-50 grayscale',
           )}
         />
       ) : (
@@ -33,19 +37,19 @@ export default function ListingCard({ listing }: ListingCardProps) {
           <span className="text-gray-500">No Image</span>
         </div>
       )}
-      
-      {/* Gradient Overlay */}
+
       <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent opacity-80 group-hover:opacity-90 transition-opacity" />
 
-      {/* Content Overlay */}
       <div className="absolute bottom-0 left-0 right-0 p-4 text-white">
         <div className="flex flex-col gap-1 items-start">
           <div className="flex gap-2 mb-1">
             <span className={clsx(
-              "inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider",
-              listing.listing_type === 'auction' ? "bg-white text-[#C8102E]" : "bg-white text-[#C8102E]"
+              'inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider',
+              listing.listing_type === 'auction'
+                ? 'bg-[#C8102E] text-white'
+                : 'bg-white text-gray-800',
             )}>
-              {listing.listing_type}
+              {listing.listing_type === 'auction' ? 'Auction' : 'Fixed Price'}
             </span>
             {listing.is_sold && (
               <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-red-600 text-white">
@@ -62,6 +66,24 @@ export default function ListingCard({ listing }: ListingCardProps) {
           </div>
         </div>
       </div>
+    </>
+  );
+
+  if (onClick) {
+    return (
+      <button
+        type="button"
+        onClick={() => onClick(listing.id)}
+        className={`${sharedClassName} w-full text-left`}
+      >
+        {cardContent}
+      </button>
+    );
+  }
+
+  return (
+    <Link to={`/listings/${listing.id}`} className={sharedClassName}>
+      {cardContent}
     </Link>
   );
 }

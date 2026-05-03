@@ -5,13 +5,13 @@ import Home from './pages/Home';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import CreateListing from './pages/CreateListing';
-import ListingDetail from './pages/ListingDetail';
 import HuskerMarketplace from './pages/HuskerMarketplace';
 import DormMarketplace from './pages/DormMarketplace';
 import About from './pages/About';
 import Help from './pages/Help';
 import YourListings from './pages/YourListings';
 import Cart from './pages/Cart';
+import Profile from './pages/Profile';
 
 function App() {
   return (
@@ -25,11 +25,11 @@ function App() {
             <Route path="about" element={<About />} />
             <Route path="help" element={<Help />} />
             <Route path="your-listings" element={<YourListings />} />
+            <Route path="profile" element={<Profile />} />
             <Route path="cart" element={<Cart />} />
             <Route path="login" element={<Login />} />
             <Route path="register" element={<Register />} />
             <Route path="create" element={<CreateListing />} />
-            <Route path="listings/:id" element={<ListingDetail />} />
           </Route>
         </Routes>
       </Router>

@@ -23,7 +23,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (token) {
       try {
         const decoded: any = jwtDecode(token);
-        // Check expiry if needed
+        if (decoded.exp && decoded.exp * 1000 < Date.now()) {
+          localStorage.removeItem('token');
+          return;
+        }
         setUser({ userId: decoded.sub, email: decoded.email });
       } catch (e) {
         localStorage.removeItem('token');
@@ -34,6 +37,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const login = (token: string) => {
     localStorage.setItem('token', token);
     const decoded: any = jwtDecode(token);
+    if (decoded.exp && decoded.exp * 1000 < Date.now()) {
+      localStorage.removeItem('token');
+      return;
+    }
     setUser({ userId: decoded.sub, email: decoded.email });
   };
 

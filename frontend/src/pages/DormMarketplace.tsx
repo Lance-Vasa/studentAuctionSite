@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import api from '../lib/api';
 import ListingCard from '../components/ListingCard';
+import ListingDetailModal from '../components/ListingDetailModal';
 import type { Listing } from '../components/ListingCard';
 
 export default function DormMarketplace() {
@@ -10,12 +11,17 @@ export default function DormMarketplace() {
   const [typeFilter, setTypeFilter] = useState('all');
   const [dateFilter, setDateFilter] = useState('all');
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
+  const [selectedListingId, setSelectedListingId] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     fetchListings();
   }, [priceFilter, typeFilter, dateFilter]);
 
   const fetchListings = async () => {
+    setLoading(true);
+    setError(null);
     try {
       const params: any = { market_type: 'general' };
       if (search) params.search = search;
@@ -49,6 +55,9 @@ export default function DormMarketplace() {
       setListings(res.data);
     } catch (err) {
       console.error(err);
+      setError('Failed to load listings. Please try again.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -169,13 +178,35 @@ export default function DormMarketplace() {
       )}
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {listings.map((listing) => (
-          <ListingCard key={listing.id} listing={listing} />
-        ))}
-        {listings.length === 0 && (
+        {loading ? (
+          <div className="col-span-full flex justify-center py-10">
+            <svg className="animate-spin h-8 w-8 text-[#C8102E]" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+            </svg>
+          </div>
+        ) : error ? (
+          <p className="text-red-600 col-span-full text-center py-10">{error}</p>
+        ) : listings.length === 0 ? (
           <p className="text-gray-500 col-span-full text-center py-10">No general items found.</p>
+        ) : (
+          listings.map((listing) => (
+            <ListingCard
+              key={listing.id}
+              listing={listing}
+              onClick={(listingId) => setSelectedListingId(listingId)}
+            />
+          ))
         )}
       </div>
+
+      {selectedListingId && (
+        <ListingDetailModal
+          listingId={selectedListingId}
+          onClose={() => setSelectedListingId(null)}
+          onListingChanged={fetchListings}
+        />
+      )}
     </div>
   );
 }

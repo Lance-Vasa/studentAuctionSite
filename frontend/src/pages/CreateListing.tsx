@@ -4,6 +4,15 @@ import Cropper from 'react-easy-crop';
 import api from '../lib/api';
 import getCroppedImg from '../lib/cropImage';
 
+const AUCTION_DURATION_OPTIONS = [
+  { value: '1h', label: '1 hour', hours: 1 },
+  { value: '3h', label: '3 hours', hours: 3 },
+  { value: '12h', label: '12 hours', hours: 12 },
+  { value: '1d', label: '1 day', hours: 24 },
+  { value: '2d', label: '2 days', hours: 48 },
+  { value: '1w', label: '1 week', hours: 168 },
+];
+
 export default function CreateListing() {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
@@ -12,7 +21,7 @@ export default function CreateListing() {
     price: '',
     listing_type: '',
     market_type: 'general',
-    expires_at: '',
+    auction_duration: '1d',
   });
   const [image, setImage] = useState<File | null>(null);
   
@@ -39,7 +48,7 @@ export default function CreateListing() {
     }
   };
 
-  const onCropComplete = useCallback((croppedArea: any, croppedAreaPixels: any) => {
+  const onCropComplete = useCallback((_croppedArea: any, croppedAreaPixels: any) => {
     setCroppedAreaPixels(croppedAreaPixels);
   }, []);
 
@@ -78,8 +87,13 @@ export default function CreateListing() {
       data.append('price', formData.price);
       data.append('listing_type', formData.listing_type);
       data.append('market_type', formData.market_type);
-      if (formData.listing_type === 'auction' && formData.expires_at) {
-        data.append('expires_at', formData.expires_at);
+      if (formData.listing_type === 'auction') {
+        const selectedDuration = AUCTION_DURATION_OPTIONS.find(
+          (option) => option.value === formData.auction_duration,
+        );
+        const hoursToAdd = selectedDuration ? selectedDuration.hours : 24;
+        const expiresAt = new Date(Date.now() + hoursToAdd * 60 * 60 * 1000);
+        data.append('expires_at', expiresAt.toISOString());
       }
       data.append('image', image);
 
@@ -159,6 +173,7 @@ export default function CreateListing() {
             type="text"
             name="title"
             required
+            maxLength={100}
             value={formData.title}
             onChange={handleChange}
             className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-[#C8102E] focus:border-[#C8102E] sm:text-sm"
@@ -171,10 +186,24 @@ export default function CreateListing() {
             name="description"
             required
             rows={3}
+            maxLength={2000}
             value={formData.description}
             onChange={handleChange}
             className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-[#C8102E] focus:border-[#C8102E] sm:text-sm"
           />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700">Market Type</label>
+          <select
+            name="market_type"
+            value={formData.market_type}
+            onChange={handleChange}
+            className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-[#C8102E] focus:border-[#C8102E] sm:text-sm"
+          >
+            <option value="general">Dorm Market</option>
+            <option value="university">Husker Gear</option>
+          </select>
         </div>
 
         <div>
@@ -194,48 +223,38 @@ export default function CreateListing() {
 
         {formData.listing_type && (
           <>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700">
-                  {formData.listing_type === 'auction' ? 'Starting Bid' : 'Price'}
-                </label>
-                <input
-                  type="number"
-                  name="price"
-                  required
-                  min="0"
-                  step="0.01"
-                  value={formData.price}
-                  onChange={handleChange}
-                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-[#C8102E] focus:border-[#C8102E] sm:text-sm"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Market Type</label>
-                <select
-                  name="market_type"
-                  value={formData.market_type}
-                  onChange={handleChange}
-                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-[#C8102E] focus:border-[#C8102E] sm:text-sm"
-                >
-                  <option value="general">Dorm Market</option>
-                  <option value="university">Husker Gear</option>
-                </select>
-              </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700">
+                {formData.listing_type === 'auction' ? 'Starting Bid' : 'Price'}
+              </label>
+              <input
+                type="number"
+                name="price"
+                required
+                min="0"
+                step="0.01"
+                value={formData.price}
+                onChange={handleChange}
+                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-[#C8102E] focus:border-[#C8102E] sm:text-sm"
+              />
             </div>
 
             {formData.listing_type === 'auction' && (
               <div>
-                <label className="block text-sm font-medium text-gray-700">Auction End Time</label>
-                <input
-                  type="datetime-local"
-                  name="expires_at"
+                <label className="block text-sm font-medium text-gray-700">Auction Duration</label>
+                <select
+                  name="auction_duration"
                   required
-                  value={formData.expires_at}
+                  value={formData.auction_duration}
                   onChange={handleChange}
                   className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-[#C8102E] focus:border-[#C8102E] sm:text-sm"
-                />
+                >
+                  {AUCTION_DURATION_OPTIONS.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
               </div>
             )}
 

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import api from '../lib/api';
+import ListingDetailModal from '../components/ListingDetailModal';
 import ListingCard, { type Listing } from '../components/ListingCard';
 import { Link } from 'react-router-dom';
 
@@ -8,21 +9,22 @@ export default function YourListings() {
   const { user } = useAuth();
   const [listings, setListings] = useState<Listing[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedListingId, setSelectedListingId] = useState<string | null>(null);
+
+  const fetchListings = async () => {
+    if (user?.userId) {
+      try {
+        const response = await api.get(`/listings?seller_id=${user.userId}&include_sold=true`);
+        setListings(response.data);
+      } catch (error) {
+        console.error('Failed to fetch listings', error);
+      } finally {
+        setLoading(false);
+      }
+    }
+  };
 
   useEffect(() => {
-    const fetchListings = async () => {
-      if (user?.userId) {
-        try {
-          const response = await api.get(`/listings?seller_id=${user.userId}&include_sold=true`);
-          setListings(response.data);
-        } catch (error) {
-          console.error('Failed to fetch listings', error);
-        } finally {
-          setLoading(false);
-        }
-      }
-    };
-
     fetchListings();
   }, [user]);
 
@@ -59,11 +61,23 @@ export default function YourListings() {
       ) : (
         <div className="grid grid-cols-1 gap-y-10 gap-x-6 sm:grid-cols-2 lg:grid-cols-4 xl:gap-x-8">
           {listings.map((listing) => (
-            <ListingCard key={listing.id} listing={listing} />
+            <ListingCard
+              key={listing.id}
+              listing={listing}
+              onClick={(listingId) => setSelectedListingId(listingId)}
+            />
           ))}
         </div>
       )}
       </div>
+
+      {selectedListingId && (
+        <ListingDetailModal
+          listingId={selectedListingId}
+          onClose={() => setSelectedListingId(null)}
+          onListingChanged={fetchListings}
+        />
+      )}
     </div>
   );
 }

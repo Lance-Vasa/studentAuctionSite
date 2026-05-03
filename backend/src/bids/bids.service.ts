@@ -46,6 +46,10 @@ export class BidsService {
         order: { amount: 'DESC' },
       });
 
+      if (highestBid && highestBid.bidder_id === bidderId) {
+        throw new BadRequestException('You are already the highest bidder');
+      }
+
       const currentPrice = highestBid ? Number(highestBid.amount) : Number(listing.price);
 
       if (createBidDto.amount <= currentPrice) {
@@ -75,6 +79,14 @@ export class BidsService {
       where: { listing_id: listingId },
       order: { amount: 'DESC' },
       relations: ['bidder'],
+    });
+  }
+
+  findByUser(userId: string) {
+    return this.bidsRepository.find({
+      where: { bidder_id: userId },
+      order: { created_at: 'DESC' },
+      relations: ['listing'],
     });
   }
 }

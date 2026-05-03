@@ -6,11 +6,14 @@ export default function Layout() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const handleLogout = () => {
     logout();
     navigate('/login');
   };
+
+  const closeMobileMenu = () => setIsMobileMenuOpen(false);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -27,6 +30,9 @@ export default function Layout() {
             </div>
             
             <div className="hidden sm:flex sm:space-x-8 flex-1 justify-center">
+              <Link to="/" className="border-transparent text-white hover:border-white hover:text-gray-200 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium font-nebraska">
+                Home
+              </Link>
               <Link to="/husker-gear" className="border-transparent text-white hover:border-white hover:text-gray-200 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium font-nebraska">
                 Husker Gear
               </Link>
@@ -35,26 +41,40 @@ export default function Layout() {
               </Link>
               {user && (
                 <>
+                  <Link to="/your-listings" className="border-transparent text-white hover:border-white hover:text-gray-200 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium font-nebraska">
+                    Your Listings
+                  </Link>
                   <Link to="/cart" className="border-transparent text-white hover:border-white hover:text-gray-200 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium font-nebraska">
                     Cart
                   </Link>
                   <Link to="/create" className="border-transparent text-white hover:border-white hover:text-gray-200 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium font-nebraska">
                     Sell
                   </Link>
-                  <Link to="/your-listings" className="border-transparent text-white hover:border-white hover:text-gray-200 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium font-nebraska">
-                    Your Listings
-                  </Link>
                 </>
               )}
-              <Link to="/about" className="border-transparent text-white hover:border-white hover:text-gray-200 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium font-nebraska">
-                About Us
-              </Link>
               <Link to="/help" className="border-transparent text-white hover:border-white hover:text-gray-200 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium font-nebraska">
                 Help
               </Link>
             </div>
             
-            <div className="flex items-center">
+            <div className="flex items-center gap-2">
+              {/* Mobile menu button */}
+              <button
+                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                className="sm:hidden inline-flex items-center justify-center p-2 rounded-md text-white hover:text-gray-200 focus:outline-none"
+                aria-label="Toggle mobile menu"
+              >
+                {isMobileMenuOpen ? (
+                  <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                ) : (
+                  <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+                  </svg>
+                )}
+              </button>
+
               {user ? (
                 <div className="relative ml-3">
                   <div>
@@ -73,6 +93,13 @@ export default function Layout() {
                       <div className="px-4 py-2 text-sm text-gray-700 border-b border-gray-100">
                         {user.email}
                       </div>
+                      <Link
+                        to="/profile"
+                        onClick={() => setIsDropdownOpen(false)}
+                        className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                      >
+                        Your Profile
+                      </Link>
                       <button
                         onClick={handleLogout}
                         className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
@@ -95,6 +122,58 @@ export default function Layout() {
             </div>
           </div>
         </div>
+
+        {/* Mobile menu */}
+        {isMobileMenuOpen && (
+          <div className="sm:hidden border-t border-[#a00d25]">
+            <div className="px-2 pt-2 pb-3 space-y-1">
+              <Link to="/" onClick={closeMobileMenu} className="block px-3 py-2 rounded-md text-base font-medium text-white hover:bg-[#a00d25] font-nebraska">
+                Home
+              </Link>
+              <Link to="/husker-gear" onClick={closeMobileMenu} className="block px-3 py-2 rounded-md text-base font-medium text-white hover:bg-[#a00d25] font-nebraska">
+                Husker Gear
+              </Link>
+              <Link to="/dorm-market" onClick={closeMobileMenu} className="block px-3 py-2 rounded-md text-base font-medium text-white hover:bg-[#a00d25] font-nebraska">
+                Dorm Market
+              </Link>
+              {user && (
+                <>
+                  <Link to="/your-listings" onClick={closeMobileMenu} className="block px-3 py-2 rounded-md text-base font-medium text-white hover:bg-[#a00d25] font-nebraska">
+                    Your Listings
+                  </Link>
+                  <Link to="/cart" onClick={closeMobileMenu} className="block px-3 py-2 rounded-md text-base font-medium text-white hover:bg-[#a00d25] font-nebraska">
+                    Cart
+                  </Link>
+                  <Link to="/create" onClick={closeMobileMenu} className="block px-3 py-2 rounded-md text-base font-medium text-white hover:bg-[#a00d25] font-nebraska">
+                    Sell
+                  </Link>
+                  <Link to="/profile" onClick={closeMobileMenu} className="block px-3 py-2 rounded-md text-base font-medium text-white hover:bg-[#a00d25] font-nebraska">
+                    My Profile
+                  </Link>
+                  <button
+                    onClick={() => { closeMobileMenu(); handleLogout(); }}
+                    className="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-white hover:bg-[#a00d25] font-nebraska"
+                  >
+                    Logout
+                  </button>
+                </>
+              )}
+              {!user && (
+                <>
+                  <Link to="/login" onClick={closeMobileMenu} className="block px-3 py-2 rounded-md text-base font-medium text-white hover:bg-[#a00d25] font-nebraska">
+                    Login
+                  </Link>
+                  <Link to="/register" onClick={closeMobileMenu} className="block px-3 py-2 rounded-md text-base font-medium text-white hover:bg-[#a00d25] font-nebraska">
+                    Register
+                  </Link>
+                </>
+              )}
+              <Link to="/help" onClick={closeMobileMenu} className="block px-3 py-2 rounded-md text-base font-medium text-white hover:bg-[#a00d25] font-nebraska">
+                Help
+              </Link>
+            </div>
+          </div>
+        )}
       </nav>
       <main className="w-full px-4 py-6 sm:px-6 lg:px-8">
         <Outlet />

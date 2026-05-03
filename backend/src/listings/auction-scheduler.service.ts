@@ -57,6 +57,9 @@ export class AuctionSchedulerService {
       });
 
       lockedListing.is_sold = true;
+      if (winningBid) {
+        lockedListing.price = Number(winningBid.amount);
+      }
       await queryRunner.manager.save(lockedListing);
 
       if (winningBid) {

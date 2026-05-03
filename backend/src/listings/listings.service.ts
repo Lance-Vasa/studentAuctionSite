@@ -1,18 +1,45 @@
-import { Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CreateListingDto } from './dto/create-listing.dto';
 import { UpdateListingDto } from './dto/update-listing.dto';
 import { Listing } from './entities/listing.entity';
+import { ListingView } from './entities/listing-view.entity';
+import { unlink } from 'fs/promises';
+import { join } from 'path';
 
 @Injectable()
 export class ListingsService {
   constructor(
     @InjectRepository(Listing)
     private listingsRepository: Repository<Listing>,
+    @InjectRepository(ListingView)
+    private listingViewsRepository: Repository<ListingView>,
   ) {}
 
+  private validateListingTextLengths(title?: string, description?: string) {
+    if (title !== undefined && title.length > 100) {
+      throw new BadRequestException('Title must be 100 characters or fewer.');
+    }
+
+    if (description !== undefined && description.length > 2000) {
+      throw new BadRequestException('Description must be 2000 characters or fewer.');
+    }
+  }
+
+  private canEditAuctionEndTime(createdAt: Date) {
+    const fiveMinutesMs = 5 * 60 * 1000;
+    return Date.now() - new Date(createdAt).getTime() <= fiveMinutesMs;
+  }
+
   create(createListingDto: CreateListingDto, sellerId: string) {
+    this.validateListingTextLengths(createListingDto.title, createListingDto.description);
+
     const listing = this.listingsRepository.create({
       ...createListingDto,
       seller_id: sellerId,
@@ -67,19 +94,91 @@ export class ListingsService {
   }
 
   async findOne(id: string) {
-    const listing = await this.listingsRepository.findOne({ where: { id }, relations: ['seller'] });
-    if (listing) {
-      listing.views = (listing.views || 0) + 1;
-      await this.listingsRepository.save(listing);
+    return this.listingsRepository.findOne({ where: { id }, relations: ['seller'] });
+  }
+
+  async trackUniqueView(id: string, userId: string) {
+    const listing = await this.listingsRepository.findOne({ where: { id } });
+    if (!listing) {
+      throw new NotFoundException('Listing not found.');
     }
-    return listing;
+
+    const existingView = await this.listingViewsRepository.findOne({
+      where: {
+        listing_id: id,
+        user_id: userId,
+      },
+    });
+
+    if (existingView) {
+      return { counted: false, views: listing.views };
+    }
+
+    const view = this.listingViewsRepository.create({
+      listing_id: id,
+      user_id: userId,
+    });
+    await this.listingViewsRepository.save(view);
+
+    await this.listingsRepository.increment({ id }, 'views', 1);
+    const updated = await this.listingsRepository.findOne({ where: { id } });
+
+    return { counted: true, views: updated?.views ?? listing.views + 1 };
   }
 
-  update(id: string, updateListingDto: UpdateListingDto) {
-    return this.listingsRepository.update(id, updateListingDto);
+  async update(id: string, updateListingDto: UpdateListingDto, userId: string) {
+    this.validateListingTextLengths(updateListingDto.title, updateListingDto.description);
+
+    const existingListing = await this.listingsRepository.findOne({ where: { id } });
+    if (!existingListing) {
+      throw new NotFoundException('Listing not found.');
+    }
+
+    if (existingListing.seller_id !== userId) {
+      throw new ForbiddenException('You can only edit your own listings.');
+    }
+
+    if (updateListingDto.expires_at !== undefined) {
+      if (existingListing.listing_type !== 'auction') {
+        throw new BadRequestException('Only auction listings can update auction end time.');
+      }
+
+      if (!this.canEditAuctionEndTime(existingListing.created_at)) {
+        throw new BadRequestException('Auction time can only be changed within 5 minutes of posting.');
+      }
+    }
+
+    if (updateListingDto.image_url && existingListing.image_url) {
+      try {
+        const oldPath = join(process.cwd(), existingListing.image_url.replace(/^\//, ''));
+        await unlink(oldPath);
+      } catch {
+        // Old file may not exist on disk; ignore.
+      }
+    }
+
+    await this.listingsRepository.update(id, updateListingDto);
+    return this.listingsRepository.findOne({ where: { id } });
   }
 
-  remove(id: string) {
+  async remove(id: string, userId: string) {
+    const listing = await this.listingsRepository.findOne({ where: { id } });
+    if (!listing) {
+      throw new NotFoundException('Listing not found.');
+    }
+    if (listing.seller_id !== userId) {
+      throw new ForbiddenException('You can only delete your own listings.');
+    }
+
+    if (listing.image_url) {
+      try {
+        const filePath = join(process.cwd(), listing.image_url.replace(/^\//, ''));
+        await unlink(filePath);
+      } catch {
+        // File may not exist; ignore.
+      }
+    }
+
     return this.listingsRepository.delete(id);
   }
 }
